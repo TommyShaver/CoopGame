@@ -7,14 +7,18 @@ public class PlayerMotor : MonoBehaviour
     public float gravity = -9.8f;
     public float jumpHieght = 3f;
     public GameObject grenadePrefab;
-    public Transform firePoint;
+    public GameObject bulletPrefab;
+    public Transform throwPointBomb;
+    public Transform gunPoint;
     public Transform camPos;
+    
 
     private CharacterController characterController;
     private Vector3 playerVelocity;
     private bool isGround;
     private bool canDash;
-    private bool canTossBomb;
+    private bool canUseLeftHand;
+    private bool canUseRightHand;
     private float speed = 7f;
 
     Gamepad gamepad = Gamepad.current;
@@ -23,7 +27,8 @@ public class PlayerMotor : MonoBehaviour
     void Start()
     {
         characterController = GetComponent<CharacterController>();
-        canTossBomb = true;
+        canUseLeftHand = true;
+        canUseRightHand = true; 
     }
 
     // Update is called once per frame
@@ -69,44 +74,72 @@ public class PlayerMotor : MonoBehaviour
     //HAnds ----------------------------------------------------------------------------------------
     public void ShootWeapon()
     {
-        Debug.Log("Gun Shoot");
+        if(!canUseRightHand)
+        {
+            return;
+        }
         if (gamepad != null)
         {
             gamepad.SetMotorSpeeds(.5f, 1.0f);
             Invoke(nameof(StopVibration), .1f);
         }
+        RaycastHit hit;
+        if (Physics.Raycast(camPos.transform.position, camPos.transform.forward, out hit, 100f))
+        {
+            Debug.Log("Hit: " + hit.transform.name);
+        }
+        GameObject bullet = Instantiate(bulletPrefab, gunPoint.position, gunPoint.rotation);
+        Rigidbody _bulletRB = bullet.GetComponent<Rigidbody>();
+        Vector3 shootingDirection = camPos.forward * 70f + Vector3.up;
+        _bulletRB.AddForce(shootingDirection, ForceMode.Impulse);
     }
+
+
 
     public void ThorwGrenade()
     {
-        if (canTossBomb)
+        if (!canUseLeftHand)
         {
-            canTossBomb = false;
-            GameObject grenade = Instantiate(grenadePrefab, firePoint.position, firePoint.rotation);
-            Rigidbody _bombRB = grenade.GetComponent<Rigidbody>();
-            Vector3 thrownDirection = camPos.forward * 15f + Vector3.up * 1.5f;
-            _bombRB.AddForce(thrownDirection, ForceMode.Impulse);
-            StartCoroutine(Hold(2f, canTossBomb));
+            return;
         }
+        canUseLeftHand = false;
+        GameObject grenade = Instantiate(grenadePrefab, throwPointBomb.position, throwPointBomb.rotation);
+        Rigidbody _bombRB = grenade.GetComponent<Rigidbody>();
+        Vector3 thrownDirection = camPos.forward * 10f + Vector3.up * 1.5f;
+        _bombRB.AddForce(thrownDirection, ForceMode.Impulse);
+        StartCoroutine(Hold(2f, canUseLeftHand));
     }
 
     public void Punch()
     {
-
+        if(!canUseLeftHand)
+        {
+            return;
+        }
     }
 
     public void ThorwHelperItem()
     {
+        if (!canUseLeftHand)
+        {
+            return;
+        }
         //force feild
         //slow down 
-        //
+        //Land mine
     }
 
     //Help Function -------------------------------------------------------------------
+
+    public void CanControl(bool canControl)
+    {
+        canUseLeftHand = canControl;
+        canUseRightHand = canControl;
+    }
     private IEnumerator Hold(float timer, bool whichBool)
     {
         yield return new WaitForSeconds(timer);
-;       canTossBomb = true;
+;       canUseLeftHand = true;
     }
     private void RestoreStat()
     {

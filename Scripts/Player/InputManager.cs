@@ -14,7 +14,6 @@ public class InputManager : MonoBehaviour
 
     private PlayerMotor motor;
     private PlayerLookAround lookAround;
-    private PlayerHeadRotate headRotate;
 
     private bool isReady;
 
@@ -24,7 +23,6 @@ public class InputManager : MonoBehaviour
         playerMovment = new PlayerMovement();
         motor = GetComponent<PlayerMotor>();
         lookAround = GetComponent<PlayerLookAround>();
-        headRotate = GetComponent<PlayerHeadRotate>();
         movementOfPlayer = playerMovment.PlayerMove;
         playerAction = playerMovment.PlayerActions;
         playerAction.Jump.performed += ctx => motor.Jump();
@@ -67,8 +65,6 @@ public class InputManager : MonoBehaviour
             return;
         }
         lookAround.ProcessLook(movementOfPlayer.LookAround.ReadValue<Vector2>());
-        headRotate.ProcessLook(movementOfPlayer.LookAround.ReadValue<Vector2>());
-
     }
 
     private IEnumerator Hold()
@@ -86,11 +82,9 @@ public class InputManager : MonoBehaviour
         {
             case Gamepad:
                 lookAround.ControlSpeed("Gamepad");
-                headRotate.ControlSpeed("Gamepad");
                 break;
             case Mouse:
                 lookAround.ControlSpeed("Mouse");
-                headRotate.ControlSpeed("Mouse");
                 break;
         }
     }
