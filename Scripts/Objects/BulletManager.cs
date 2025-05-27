@@ -7,17 +7,6 @@ public class BulletManager : MonoBehaviour
     {
         StartCoroutine(TimerTillDeath());       
     }
-    private void OnTriggerEnter(Collider other)
-    {
-        StopCoroutine(TimerTillDeath());
-        IDamageable damageable = other.GetComponent<IDamageable>();
-        if (damageable != null)
-        {
-            damageable.Damage(5);
-            Debug.Log("I hit something");
-            Destroy(gameObject);
-        }
-    }
 
     private IEnumerator TimerTillDeath()
     {

@@ -1,6 +1,5 @@
 using System;
 using System.Collections;
-using Unity.VisualScripting;
 using UnityEngine;
 using UnityEngine.InputSystem;
 using UnityEngine.InputSystem.Utilities;
@@ -8,9 +7,11 @@ using UnityEngine.InputSystem.Utilities;
 
 public class InputManager : MonoBehaviour
 {
+    public PlayerHelperItem playerHelperItem;
     private PlayerMovement playerMovment;
     private PlayerMovement.PlayerMoveActions movementOfPlayer;
     private PlayerMovement.PlayerActionsActions playerAction;
+    private PlayerMovement.PlayerUIActions playerUIActions;
 
     private PlayerMotor motor;
     private PlayerLookAround lookAround;
@@ -20,21 +21,42 @@ public class InputManager : MonoBehaviour
     // Start is called once before the first execution of Update after the MonoBehaviour is created
     private void Awake()
     {
+        //Control inputs ------------------------------------------------------------------
         playerMovment = new PlayerMovement();
         motor = GetComponent<PlayerMotor>();
         lookAround = GetComponent<PlayerLookAround>();
         movementOfPlayer = playerMovment.PlayerMove;
         playerAction = playerMovment.PlayerActions;
+
+        //Single pressed inputs -------------------------------------------------------------------
+        //Jump -----------------------------------------------------------------
         playerAction.Jump.performed += ctx => motor.Jump();
-        playerAction.Jump.performed += ctx => motor.Dash();
+
+        //Shoot ----------------------------------------------------------------
         playerAction.FireGun.performed += ctx => motor.ShootWeapon();
+
+        //Left Hand ------------------------------------------------------------
         playerAction.TossGrenade.performed += ctx => motor.ThorwGrenade();
+        playerAction.Melee.performed += ctx => motor.Punch();
+        playerAction.UseItem.performed += ctx => motor.ThorwHelperItem();
+        playerAction.SwitchItems.performed += ctx => playerHelperItem.SelectHelperItem();
+        playerAction.SwitchItemMouse.performed += ctx => playerHelperItem.SelectHelperItem();
+
+        //Zoom -----------------------------------------------------------------
+        playerAction.Zoom.performed += ctx => motor.AimSpeed(true);
+        playerAction.Zoom.canceled += ctx => motor.AimSpeed(false);
+        playerAction.Zoom.performed += ctx => lookAround.AimHold(true);
+        playerAction.Zoom.canceled += ctx => lookAround.AimHold(false);
+
+        //Menu Inputs -----------------------------------------------------------------------------
+
     }
     
     private void OnEnable()
     {
         movementOfPlayer.Enable();
         playerAction.Enable();
+        playerAction.Score.Enable();
         movementOfPlayer.LookAround.performed += WhichController; 
     }
 
@@ -42,13 +64,13 @@ public class InputManager : MonoBehaviour
     {
         movementOfPlayer.Disable();
         playerAction.Disable();
+        playerAction.Score.Disable();
         movementOfPlayer.LookAround.performed -= WhichController;
     }
 
 
     private void Start()
     {
-        StartCoroutine(Hold()); //Wait for game to true load.
         Cursor.lockState = CursorLockMode.Locked; //Don't let different display effect mouse movemnt.
         Cursor.visible = false;
     }
@@ -56,24 +78,21 @@ public class InputManager : MonoBehaviour
     // Update is called once per frame
     private void FixedUpdate()
     {
-        motor.ProcesMove(movementOfPlayer.Movement.ReadValue<Vector2>());
-    }
-    private void Update()
-    {
         if (!isReady)
         {
             return;
         }
+        motor.ProcesMove(movementOfPlayer.Movement.ReadValue<Vector2>());
         lookAround.ProcessLook(movementOfPlayer.LookAround.ReadValue<Vector2>());
     }
-
-    private IEnumerator Hold()
+  
+    //In bound commands ---------------------------------------------------------
+    public void CanMoveAround(bool canUse)
     {
-        yield return new WaitForSeconds(1);
-        isReady = true;
+        isReady = canUse;
     }
 
-    // Checks which controller is being used
+    // Checks which controller is being used -----------------------------------
     private void WhichController(InputAction.CallbackContext context)
     {
         var device = context.control.device;
@@ -81,12 +100,11 @@ public class InputManager : MonoBehaviour
         switch (device)
         {
             case Gamepad:
-                lookAround.ControlSpeed("Gamepad");
+                lookAround.ControlSpeed(true);
                 break;
             case Mouse:
-                lookAround.ControlSpeed("Mouse");
+                lookAround.ControlSpeed(false);
                 break;
         }
     }
-
 }

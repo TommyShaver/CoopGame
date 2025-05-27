@@ -1,62 +1,52 @@
+using DG.Tweening;
 using System.Collections;
 using UnityEngine;
 
 
 public class GerandeManager : MonoBehaviour
 {
-    public SphereCollider blastCollider;
+    public GameObject blastPart;
 
-    private float blastRange = 20;
-    private bool  canHurt;
+    private Tween speeeen;
 
     private void Start()
     {
-        Debug.Log("we are alive");
+        float rotateSpeed = UnityEngine.Random.Range(1, 3);
         StartCoroutine(GerandeTimer(RandomTimer()));
-        blastCollider.enabled = false;  
-        blastCollider.radius = 0;
+        speeeen = transform.DORotate( new Vector3(_RandoDirection(),0,0), rotateSpeed).SetLoops(-1, LoopType.Restart);
     }
-    
+
     //Logic ---------------------------------------------
     private int RandomTimer()
     {
-        int randoTime = UnityEngine.Random.Range(4, 5);
+        int randoTime = UnityEngine.Random.Range(2, 4);
         return randoTime;
     }
-    
 
     private void Explode()
     {
-        blastCollider.enabled = true;
-        StartCoroutine(GerandeEndOfLife());
-        //play explostion
-        //play particles.
-
+        speeeen.Kill();
+        Instantiate(blastPart, transform.position, transform.rotation);
+        Destroy(gameObject);
     }
-    //IEnumerator ---------------------------------------
+
+    //Help function ---------------------------------------
     private IEnumerator GerandeTimer(float howLong)
     {
         yield return new WaitForSeconds(howLong);
         Explode();
     }
 
-    private IEnumerator GerandeEndOfLife()
+    private float _RandoDirection()
     {
-        for (int i = 0; i <= blastRange; i++)
+        float whichDirection = 0;
+        float posOrNeg = -1;
+        int randoNumber = UnityEngine.Random.Range(0, 1);
+        if (randoNumber == 0)
         {
-            yield return new WaitForSeconds(.01f);
-            blastCollider.radius = i;
-            canHurt = true;
+            posOrNeg = 1;
         }
-        Destroy(gameObject);
-    }
-    //Interface ----------------------------------------
-    private void OnTriggerEnter(Collider other)
-    {
-        IDamageable damageable = other.GetComponent<IDamageable>();
-        if (damageable != null && canHurt)
-        {
-            damageable.Damage(50);
-        }
+        whichDirection = 180 * posOrNeg;
+        return whichDirection;
     }
 }
